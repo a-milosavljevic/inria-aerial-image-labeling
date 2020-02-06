@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project specific
+.idea/
+tmp/
+data/aerialimagelabeling*
+data/NEW2-AerialImageDataset*
+data/AerialImageDataset/
+data/train/
+data/test/
+data/train_384x384/
