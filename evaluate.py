@@ -6,6 +6,7 @@ The result will be created in "eval_ft_N" (or "eval_N") subfolders in "tmp" fold
 from data import *
 from model import *
 import tensorflow as tf
+import tensorflow.keras.backend as K
 import numpy as np
 import cv2 as cv
 import csv
@@ -13,6 +14,7 @@ import math
 
 
 tf.compat.v1.disable_eager_execution()
+
 
 for validation_set in [1, 2, 3, 4, 5, 6]:
     if validation_set < 0:
@@ -167,3 +169,4 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
                            sum_pixels]])
 
     model = None
+    K.clear_session()

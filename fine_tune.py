@@ -1,15 +1,18 @@
 """
-Once the first training phase is completed (train.py), use this script to fine-tune the models.
+Once the first training phase is completed (train.py), use this script to fine-tune the models using the mean of
+binary_crossentopy and dice_loss (applied only on the first channel).
 The script needs previously trained models (e.g. trained_model_1.h5) to be found in "tmp" folder.
-In case of an out of memory problem, adjust batch_size in settings.py.
+In case of an out of memory problem, adjust batch_size in settings.py.exit
 """
 from data import *
 from model import *
 import tensorflow as tf
+import tensorflow.keras.backend as K
 import numpy as np
 
 
 tf.compat.v1.disable_eager_execution()
+
 
 for validation_set in [1, 2, 3, 4, 5, 6]:
     ####################################################################################################################
@@ -51,8 +54,8 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
 
     csv_logger = tf.keras.callbacks.CSVLogger(training_log_path, separator=',', append=False)
 
-    early_stopping = tf.keras.callbacks.EarlyStopping(patience=1*lr_period, restore_best_weights=True, verbose=1,
-                                                      monitor=cb_monitor[0], mode=cb_monitor[1])
+    early_stopping = tf.keras.callbacks.EarlyStopping(patience=early_stopping_patience_ft, restore_best_weights=True,
+                                                      verbose=1, monitor=cb_monitor[0], mode=cb_monitor[1])
 
     def cosine_annealing_schedule(t, lr, period=lr_period, scale=lr_scale, decay=lr_decay):
         step = t // period
@@ -76,12 +79,13 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
     data_gen_valid = DataAugmentation(batch_size, validation=True, validation_set=validation_set,
                                       process_input=preprocessing, border=border)
 
-    model.fit_generator(data_gen_train,
-                        epochs=epochs,
-                        validation_data=data_gen_valid,
-                        shuffle=True,
-                        callbacks=[checkpointer, csv_logger, early_stopping, schedule_lr],
-                        verbose=1)
+    model.fit(data_gen_train,
+              epochs=epochs,
+              validation_data=data_gen_valid,
+              shuffle=True,
+              callbacks=[checkpointer, csv_logger, early_stopping, schedule_lr],
+              verbose=1)
 
     model.save(model_path, include_optimizer=False)
     model = None
+    K.clear_session()

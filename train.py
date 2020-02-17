@@ -1,15 +1,17 @@
 """
-Execute this script to run the initial training phase where the backbone is frozen.
+Execute this script to run the initial training phase using binary_crossentropy loss.
 In case of an out of memory problem adjust batch_size in settings.py.
 Be sure to run prepare_data.py first.
 """
 from data import *
 from model import *
 import tensorflow as tf
+import tensorflow.keras.backend as K
 import numpy as np
 
 
 tf.compat.v1.disable_eager_execution()
+
 
 for validation_set in [1, 2, 3, 4, 5, 6]:
     ####################################################################################################################
@@ -22,7 +24,7 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
     training_log_path = 'training_log_{}.csv'.format(validation_set)
     training_log_path = os.path.join(tmp_folder, training_log_path)
 
-    model = create_model(border=border, trainable_encoder=False)
+    model = create_model(border=border, trainable_encoder=True)
 
     optimizer = tf.keras.optimizers.RMSprop(lr=init_lr)
 
@@ -40,8 +42,8 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
                                                       monitor=cb_monitor[0], mode=cb_monitor[1])
     csv_logger = tf.keras.callbacks.CSVLogger(training_log_path, separator=',', append=False)
 
-    early_stopping = tf.keras.callbacks.EarlyStopping(patience=2*lr_period, restore_best_weights=True, verbose=1,
-                                                      monitor=cb_monitor[0], mode=cb_monitor[1])
+    early_stopping = tf.keras.callbacks.EarlyStopping(patience=early_stopping_patience, restore_best_weights=True,
+                                                      verbose=1, monitor=cb_monitor[0], mode=cb_monitor[1])
 
     def cosine_annealing_schedule(t, lr, period=lr_period, scale=lr_scale, decay=lr_decay):
         step = t // period
@@ -74,3 +76,4 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
 
     model.save(model_path, include_optimizer=False)
     model = None
+    K.clear_session()
