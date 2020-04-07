@@ -50,12 +50,17 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
     report_path = os.path.join(eval_folder, '_eval_report.csv')
     with open(report_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerows([['filename', 'acc', 'iou', 'acc_iou', 'intersection', 'union', 'pixels']])
+        writer.writerows([['filename', 'acc', 'iou', 'acc_iou', 'intersection', 'union', 'total_pixels',
+                           'true_positive', 'true_negative', 'false_positive', 'false_negative']])
         f.flush()
 
         sum_intersection = 0
         sum_union = 0
-        sum_pixels = 0
+        sum_total_pixels = 0
+        sum_true_positive = 0
+        sum_true_negative = 0
+        sum_false_positive = 0
+        sum_false_negative = 0
 
         for filename in src_train_images:
             name = filename[:-4]
@@ -152,21 +157,34 @@ for validation_set in [1, 2, 3, 4, 5, 6]:
 
                 acc = acc_img(img_gt, img_mask)
                 iou = iou_img(img_gt, img_mask)
-                intersection = np.sum(np.minimum(img_gt, img_mask) / 255)
-                union = np.sum(np.maximum(img_gt, img_mask) / 255)
-                print(filename, acc, iou, intersection, union)
-                writer.writerows([[filename[:-4], acc, iou, (acc + iou) / 2, intersection, union, master_size**2]])
+                intersection = np.sum(np.logical_and(img_mask > 0, img_gt > 0))
+                union = np.sum(np.logical_or(img_mask > 0, img_gt > 0))
+                total_pixels = master_size**2
+                true_positive = np.sum(np.logical_and(img_mask > 0, img_gt > 0))
+                true_negative = np.sum(np.logical_and(img_mask == 0, img_gt == 0))
+                false_positive = np.sum(np.logical_and(img_mask > 0, img_gt == 0))
+                false_negative = np.sum(np.logical_and(img_mask == 0, img_gt > 0))
+                print(filename, acc, iou, intersection, union, total_pixels,
+                      true_positive, true_negative, false_positive, false_negative)
+                writer.writerows([[filename[:-4], acc, iou, (acc + iou) / 2, intersection, union, total_pixels,
+                                   true_positive, true_negative, false_positive, false_negative]])
                 f.flush()
 
                 sum_intersection += intersection
                 sum_union += union
-                sum_pixels += master_size**2
+                sum_total_pixels += total_pixels
+                sum_true_positive += true_positive
+                sum_true_negative += true_negative
+                sum_false_positive += false_positive
+                sum_false_negative += false_negative
 
-        total_acc = (sum_pixels - sum_union + sum_intersection) / sum_pixels
+        total_acc = (sum_total_pixels - sum_union + sum_intersection) / sum_total_pixels
         total_iou = sum_intersection / sum_union if sum_union > 0 else 1
-        print('TOTAL', total_acc, total_iou, sum_intersection, sum_union)
-        writer.writerows([['TOTAL', total_acc, total_iou, (total_acc + total_iou) / 2, sum_intersection, sum_union,
-                           sum_pixels]])
+        print('TOTAL', total_acc, total_iou, sum_intersection, sum_union, sum_total_pixels,
+              sum_true_positive, sum_true_negative, sum_false_positive, sum_false_negative)
+        writer.writerows([['TOTAL', total_acc, total_iou, (total_acc + total_iou) / 2,
+                           sum_intersection, sum_union, sum_total_pixels,
+                           sum_true_positive, sum_true_negative, sum_false_positive, sum_false_negative]])
 
     model = None
     K.clear_session()
