@@ -1,5 +1,5 @@
-#Inria Aerial Image Labeling
-##Building Footprint Extraction using Deep Semantic Segmentation 
+# Inria Aerial Image Labeling
+## Building Footprint Extraction using Deep Semantic Segmentation 
 
 To be able to use the code please follow listed instructions:
 
